@@ -52,7 +52,6 @@ The platform allows users to:
 - TypeScript
 - Vite
 - React Router
-- Axios
 - SockJS and STOMP for real-time communication
 
 ### Development Tools
@@ -170,24 +169,23 @@ The project uses WebSocket-based communication so queue updates can appear live.
 
 ---
 
-## Frontend Status and Future Layout
+## Demo Accounts
 
-The frontend is still being developed and improved. The current layout focuses on core functionality, but the planned direction is a cleaner and more polished experience.
+The backend seeds these accounts and sample services when the database is empty:
 
-The future frontend design is expected to include:
+| Role  | Email             | Password   |
+| ----- | ----------------- | ---------- |
+| Admin | `admin@queue.com` | `admin123` |
+| Staff | `staff@queue.com` | `staff123` |
 
-- separate dashboards for customers, staff, and admins
-- a modern and responsive interface
-- real-time queue updates on screen
-- clearer analytics visuals
-- a smoother experience for joining and tracking queues
+These credentials are for local development only. Change or remove the seeded credentials before deploying the application.
 
 ---
 
 ## Project Structure
 
-- backend: Spring Boot application, REST APIs, queue logic, authentication, and database access
-- frontend: React and TypeScript interface for users and staff
+- `backend/`: Spring Boot REST API, authentication, queue services, database access, and WebSocket endpoint
+- `frontend/`: React and TypeScript application for customers, staff, and administrators
 
 ---
 
@@ -197,38 +195,68 @@ Before running the project locally, make sure you have:
 
 - Java 17+
 - MySQL 8+
-- Maven
-- Node.js and npm
+- Node.js 20.19+ or 22.12+, and npm (required by Vite 8)
 
----
+The backend includes a Maven wrapper, so a separate Maven installation is not required.
 
 ## How to Run Locally
 
-### Backend
+### 1. Configure MySQL and the backend
 
-1. Start MySQL
-2. Create a database named virtual_queue
-3. Update your database credentials in the backend configuration file
-4. Run:
-   ```bash
-   cd backend
-   ./mvnw spring-boot:run
-   ```
+Create the database and copy the sample configuration to the local configuration file. Run these commands from the repository root in PowerShell:
 
-### Frontend
+```powershell
+mysql -u root -p -e "CREATE DATABASE IF NOT EXISTS virtual_queue;"
+Copy-Item backend/src/main/resources/application-sample.properties backend/src/main/resources/application.properties
+```
 
-1. Install dependencies:
-   ```bash
-   cd frontend
-   npm install
-   ```
-2. Start the development server:
-   ```bash
-   npm run dev
-   ```
+Edit `backend/src/main/resources/application.properties` with your MySQL username and password. Set `jwt.secret` to a private random value of at least 32 characters. This local file is ignored by Git; do not commit credentials.
 
----
+Start the backend from the repository root:
+
+```powershell
+cd backend
+.\mvnw.cmd spring-boot:run
+```
+
+In Git Bash or a Unix shell, use `./mvnw spring-boot:run`. The API listens on port `8081` by default.
+
+### 2. Configure and run the frontend
+
+Create `frontend/.env.local` with the local backend URLs:
+
+```dotenv
+VITE_API_URL=http://localhost:8081/api
+VITE_WS_URL=http://localhost:8081/ws
+```
+
+Then, in a second terminal, run:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Open the local URL printed by Vite, usually `http://localhost:5173`.
+
+## Validation
+
+Run the backend tests from the repository root:
+
+```powershell
+cd backend
+.\mvnw.cmd test
+```
+
+Run the frontend checks from the repository root:
+
+```bash
+cd frontend
+npm run lint
+npm run build
+```
 
 ## Summary
 
-This project combines modern web development, real-time communication, and practical queue management into one simple system. It is designed to make service handling more organized, give customers better visibility, help staff work more efficiently, and give admins stronger control over operations.
+Virtual Queue Management provides customers with a way to join and track service queues, staff with tools to advance the queue, and administrators with service and analytics controls. The React frontend communicates with a Spring Boot API over HTTP and receives live queue updates over WebSockets.
