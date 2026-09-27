@@ -2,13 +2,18 @@ package com.queue.controllers;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
 
 import org.springframework.http.*;
 import org.springframework.web.bind.annotation.*;
 
 import com.queue.data_transfer_object_dto.JoinQueueRequest;
 import com.queue.model.Customer;
+import com.queue.model.Services;
+import com.queue.service.AdminService;
 import com.queue.service.QueueService;
+
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/customer")
@@ -16,15 +21,40 @@ import com.queue.service.QueueService;
 public class CustomerController {
     
     private final QueueService queueService;
+    private final AdminService adminService;
 
-    public CustomerController(QueueService queueService){
+    public CustomerController(QueueService queueService, AdminService adminService){
         this.queueService = queueService;
+        this.adminService = adminService;
     }
 
+    //list active services - GET /api/customer/services
+    // Public on purpose: customers need to know what services exist before
+    // they can join a queue, and shouldn't need an admin login to see that.
+
+    @GetMapping("/services")
+    public ResponseEntity<Map<String,Object>> getActiveServices(){
+        try{
+            List<Services> services = adminService.getActiveServices();
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("services", services);
+
+            return ResponseEntity.ok(response);
+        } catch(Exception e){
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    
     // join queue - POST /api/customer/join
 
     @PostMapping("/join")
-    public ResponseEntity<Map<String, Object>> joinQueue(@RequestBody JoinQueueRequest request) {
+    public ResponseEntity<Map<String, Object>> joinQueue(@Valid @RequestBody JoinQueueRequest request) {
             
         try {
             

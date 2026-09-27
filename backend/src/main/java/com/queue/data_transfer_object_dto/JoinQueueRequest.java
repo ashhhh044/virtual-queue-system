@@ -1,11 +1,25 @@
 package com.queue.data_transfer_object_dto;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 
 public class JoinQueueRequest {
+
+    @NotBlank(message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Email is required")
+    @Email(message = "Email must be valid")
     private String email;
+
+    @NotBlank(message = "Phone number is required")
     private String phone;
+
+    @NotBlank(message = "Service Type is required")
     private String serviceType;
+
+    @Pattern(regexp = "(?i)normal|high|emergency", message = "Priority must be normal, high, or emergency")
     private String priority;
     
     // Default constructor

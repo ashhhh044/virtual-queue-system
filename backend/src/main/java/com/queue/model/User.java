@@ -15,7 +15,13 @@ public abstract class User {
     @Column(nullable = false)
     private String name;
 
-    @Column(nullable = false, unique = true)
+    // NOTE: intentionally NOT unique at the DB level. This column is shared
+    // by Customer, Staff, and Admin (JOINED inheritance). A unique constraint
+    // here would stop a customer from ever joining the queue a second time
+    // with the same email. Staff/Admin emails are already checked for
+    // uniqueness in AdminService/AuthController before saving.
+
+    @Column(nullable = false)
     private String email;
 
     @Column(nullable = false)
@@ -26,6 +32,12 @@ public abstract class User {
 
     @Column(updatable = false)
     private LocalDateTime createdAt;
+
+    @Column(name = "refresh_token")
+    private String refreshToken;
+
+    @Column(name = "refresh_token_expiry")
+    private LocalDateTime refreshTokenExpiry;
 
     public User(){
         this.createdAt = LocalDateTime.now();
@@ -89,6 +101,22 @@ public abstract class User {
         this.createdAt = createdAt;
     }
 
+    public String getRefreshToken() {
+        return refreshToken;
+    }
+    
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
+    }
+
+    public LocalDateTime getRefreshTokenExpiry() {
+        return refreshTokenExpiry;
+    }
+    
+    public void setRefreshTokenExpiry(LocalDateTime refreshTokenExpiry) {
+        this.refreshTokenExpiry = refreshTokenExpiry;
+    }
+
     @Override
     public String toString(){
         return "User{" +
@@ -97,6 +125,8 @@ public abstract class User {
                 ", email='" + email + '\'' +
                 ", role='" + role + '\'' +
                 ", createdAt=" + createdAt +
+                ", refreshToken=" + refreshToken +
+                ", refreshTokenExpiry=" + refreshTokenExpiry +
                 '}';
     }
 

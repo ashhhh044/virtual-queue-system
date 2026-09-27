@@ -24,6 +24,9 @@ public class ServiceQueue {
     
     @Column(name = "active_counters")
     private Integer activeCounters = 1;
+
+    @Column(name = "next_token_number")
+    private Integer nextTokenNumber = 1; // auto-increment counter to generate token numbers 
     
     @Column(name = "avg_service_time")
     private Double avgServiceTime = 5.0;
@@ -55,13 +58,14 @@ public class ServiceQueue {
     public void addCustomer(Customer customer){
         // Emergency > High > Normal
         if("emergency".equalsIgnoreCase(customer.getPriority())){
+            int insertIndex = getLastEmergencyIndex() + 1;
             // add to beginning of queue
-            customers.add(0, customer);
-            System.out.println("Emergency customer added at position 0");
+            customers.add(insertIndex, customer);
+            System.out.println("Emergency customer added at position: " + insertIndex);
         }
         // add after all emergency customers
         else if("high".equalsIgnoreCase(customer.getPriority())){
-            int insertIndex = getLastEmergencyIndex() + 1;
+            int insertIndex = getLastHighOrEmergencyIndex() + 1;
             customers.add(insertIndex, customer);
             System.out.println("High customer added at position: " + insertIndex);
         }
@@ -122,6 +126,17 @@ public class ServiceQueue {
         return lastEmergencyIndex;
     }
 
+    private int getLastHighOrEmergencyIndex(){
+        int lastIndex = -1;
+        for(int i = 0; i < customers.size(); i++){
+            String p = customers.get(i).getPriority();
+            if("emergency".equalsIgnoreCase(p) || "high".equalsIgnoreCase(p)){
+                lastIndex = i;
+            }
+        }
+        return lastIndex;
+    }
+
     // Update positions for customers in the queue
     private void updateAllPositions() {
         for (int i = 0; i < customers.size(); i++) {
@@ -132,30 +147,30 @@ public class ServiceQueue {
         }
     }
 
-    public void reorderByPriority(){
-        List<Customer> emergency = new ArrayList<>();
-        List<Customer> high = new ArrayList<>();
-        List<Customer> normal = new ArrayList<>();
+    // public void reorderByPriority(){
+    //     List<Customer> emergency = new ArrayList<>();
+    //     List<Customer> high = new ArrayList<>();
+    //     List<Customer> normal = new ArrayList<>();
 
-        // separating customers based on priority
-        for(Customer c : customers){
-            if("emergency".equalsIgnoreCase(c.getPriority())){
-                emergency.add(c);
-            }
-            else if("high".equalsIgnoreCase(c.getPriority())){
-                high.add(c);
-            }
-            else{
-                normal.add(c);
-            }
-        }
-        // queue in correct order
-        customers.clear();
-        customers.addAll(emergency);
-        customers.addAll(high);
-        customers.addAll(normal);
+    //     // separating customers based on priority
+    //     for(Customer c : customers){
+    //         if("emergency".equalsIgnoreCase(c.getPriority())){
+    //             emergency.add(c);
+    //         }
+    //         else if("high".equalsIgnoreCase(c.getPriority())){
+    //             high.add(c);
+    //         }
+    //         else{
+    //             normal.add(c);
+    //         }
+    //     }
+    //     // queue in correct order
+    //     customers.clear();
+    //     customers.addAll(emergency);
+    //     customers.addAll(high);
+    //     customers.addAll(normal);
 
-    }
+    // }
 
     //  Remove a customer from the queue
     public boolean removeCustomer(Customer customer) {
@@ -208,6 +223,23 @@ public class ServiceQueue {
     
     public void setActiveCounters(Integer activeCounters) {
         this.activeCounters = activeCounters;
+    }
+
+    public Integer getNextTokenNumber(){
+        return nextTokenNumber;
+    }
+
+    public void setNextTokenNumber(Integer nextTokenNumber){
+        this.nextTokenNumber = nextTokenNumber;
+    }
+    
+    public String claimNextTokenNumber() {
+        if (this.nextTokenNumber == null) {
+            this.nextTokenNumber = 1;
+        }
+        int current = this.nextTokenNumber;
+        this.nextTokenNumber = current + 1;
+        return String.format("T%03d", current);
     }
     
     public Double getAvgServiceTime() {

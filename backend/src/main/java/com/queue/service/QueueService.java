@@ -1,6 +1,8 @@
 package com.queue.service;
 
+import java.time.Duration;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,9 +11,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.queue.controllers.WebSocketController;
 import com.queue.model.Customer;
+import com.queue.model.ServiceHistory;
 import com.queue.model.ServiceQueue;
+import com.queue.model.Services;
 import com.queue.repository.CustomerRepository;
+import com.queue.repository.ServiceHistoryRepository;
 import com.queue.repository.ServiceQueueRepository;
+import com.queue.repository.ServiceRepository;
 
 @Service
 public class QueueService {
@@ -19,11 +25,15 @@ public class QueueService {
     private final CustomerRepository customerRepository;
     private final ServiceQueueRepository queueRepository;
     private final WebSocketController webSocketController;
+    private final ServiceRepository serviceRepository;
+    private final ServiceHistoryRepository serviceHistoryRepository;
 
-    public QueueService(CustomerRepository customerRepository, ServiceQueueRepository queueRepository, WebSocketController webSocketController){
+    public QueueService(CustomerRepository customerRepository, ServiceQueueRepository queueRepository, WebSocketController webSocketController, ServiceRepository serviceRepository, ServiceHistoryRepository serviceHistoryRepository){
         this.customerRepository = customerRepository;
         this.queueRepository = queueRepository;
         this.webSocketController = webSocketController;
+        this.serviceRepository = serviceRepository;
+        this.serviceHistoryRepository = serviceHistoryRepository;
     }
 
     // Join a customer to a queue
@@ -48,11 +58,10 @@ public class QueueService {
         customer.setPriority(priority != null ? priority : "normal");
         customer.setStatus("waiting");
         customer.setJoinedAt(LocalDateTime.now());
-         customer.setRole("CUSTOMER");
+        customer.setRole("CUSTOMER");
 
-        // generate token number
-        int queueSize = queue.getCustomers().size();
-        customer.setTokenNumber(String.format("T%03d", queueSize+1));
+        // generate token number always-increasing, never reused even after earlier customers are served/cancelled)
+        customer.setTokenNumber(queue.claimNextTokenNumber());
 
         // generate access key for customers to check status
         customer.setAccessKey(generateAccessKey());
@@ -82,8 +91,9 @@ public class QueueService {
     // get current queue for service
 
     public List<Customer> getCurrentQueue(String serviceType){
-        ServiceQueue queue = queueRepository.findByServiceType(serviceType).orElseThrow(() -> new RuntimeException("Queue not found!"));
-        return queue.getCustomers();
+        return queueRepository.findByServiceType(serviceType)
+            .map(ServiceQueue::getCustomers)
+            .orElse(new ArrayList<>());
     }
 
     // call next customer in queue
@@ -128,7 +138,16 @@ public class QueueService {
         ServiceQueue queue = queueRepository.findAll().stream().filter(q -> q.getCustomers().stream().anyMatch(c -> c.getId().equals(customerId))).findFirst().orElse(null);
 
         if(queue != null){
+            
+            Services service = serviceRepository.findByName(queue.getServiceType()).orElse(null);
+            double serviceTimeMinutes = customer.getCalledAt() != null
+            ? Duration.between(customer.getCalledAt(), customer.getServedAt()).toMinutes() 
+            : 0;
+            ServiceHistory history = new ServiceHistory(service, saved, null, serviceTimeMinutes, "completed");
+            serviceHistoryRepository.save(history);
+            
             webSocketController.broadcastQueueUpdate(queue.getServiceType());
+
         }
         return saved;
     }

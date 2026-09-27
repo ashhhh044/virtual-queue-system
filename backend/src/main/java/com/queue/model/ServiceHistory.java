@@ -14,7 +14,7 @@ public class ServiceHistory {
 
     @ManyToOne
     @JoinColumn(name = "service_id")
-    private Service service;
+    private Services service;
 
     @ManyToOne
     @JoinColumn(name = "customer_id")
@@ -39,7 +39,7 @@ public class ServiceHistory {
     
     public ServiceHistory() {}
 
-    public ServiceHistory(Service service, Customer customer, Staff staff, Double serviceTime, String status){  
+    public ServiceHistory(Services service, Customer customer, Staff staff, Double serviceTime, String status){  
         this.service = service;
         this.customer = customer;
         this.staff = staff;
@@ -59,11 +59,11 @@ public class ServiceHistory {
         this.Id = Id;
     }
     
-    public Service getService() {
+    public Services getService() {
         return service;
     }
     
-    public void setService(Service service) {
+    public void setService(Services service) {
         this.service = service;
     }
     

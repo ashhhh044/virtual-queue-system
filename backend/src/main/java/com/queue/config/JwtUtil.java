@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import io.jsonwebtoken.Claims;
@@ -16,16 +17,22 @@ import io.jsonwebtoken.security.Keys;
 @Component
 public class JwtUtil {
     
-    private static final String SECRET_KEY = "ds6djx7e5795jaw5u82ule29q2osea9u";
+    // Read from application.properties (jwt.secret). Falls back to a dev-only
+    // default so the app still runs locally if it's not set - but for any real
+    // deployment, set JWT_SECRET as an environment variable.
+    @Value("${jwt.secret:ds6djx7e5795jaw5u82ule29q2osea9u}")
+    private String secretKey;
 
-    // Token validity: 8 hours in milliseconds
-    private static final long EXPIRATION_TIME = 8*60*60*1000;
+    // Access token validity: 15 minutes. Short on purpose - the refresh token is what stays valid for days, not this one.
+
+    private static final long EXPIRATION_TIME = 15*60*1000;
 
     // Generate signing key
     private Key getSigningKey(){
-        byte[] keyBytes = SECRET_KEY.getBytes();
+        byte[] keyBytes = secretKey.getBytes();
         return Keys.hmacShaKeyFor(keyBytes);
     }
+
 
     // Extract username/email from token
     public String extractUsername(String token){

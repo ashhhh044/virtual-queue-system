@@ -3,11 +3,12 @@ package com.queue.service;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.queue.data_transfer_object_dto.AnalyticsResponse;
 import com.queue.model.Customer;
-import com.queue.model.Service;
+import com.queue.model.Services;
 import com.queue.model.ServiceHistory;
 import com.queue.model.Staff;
 import com.queue.repository.CustomerRepository;
@@ -22,26 +23,29 @@ public class AdminService {
     private final StaffRepository staffRepository;
     private final ServiceRepository serviceRepository;
     private final ServiceHistoryRepository serviceHistoryRepository;
+    private final PasswordEncoder passwordEncoder;
 
     public AdminService(CustomerRepository customerRepository, 
                         StaffRepository staffRepository, 
                         ServiceRepository serviceRepository, 
-                        ServiceHistoryRepository serviceHistoryRepository){
+                        ServiceHistoryRepository serviceHistoryRepository,
+                        PasswordEncoder passwordEncoder){
         this.customerRepository = customerRepository;
         this.staffRepository = staffRepository;
         this.serviceRepository = serviceRepository;
         this.serviceHistoryRepository = serviceHistoryRepository;
+        this.passwordEncoder = passwordEncoder;
     }
 
     // Service CRUD
 
     @Transactional
-    public Service createService(String name, String description, Integer estimatedDuration){
+    public Services createService(String name, String description, Integer estimatedDuration){
         if(serviceRepository.findByName(name).isPresent()){
             throw new RuntimeException("Service with name: " +name+ " already exists!");
         }
 
-        Service service = new Service();
+        Services service = new Services();
         service.setName(name);
         service.setDescription(description);
         service.setEstimatedDuration(estimatedDuration);
@@ -50,22 +54,22 @@ public class AdminService {
         return serviceRepository.save(service);
     }
 
-    public List<Service> getAllServices(){
+    public List<Services> getAllServices(){
         return serviceRepository.findAll();
     }
 
-    public List<Service> getActiveServices(){
+    public List<Services> getActiveServices(){
         return serviceRepository.findByIsActiveTrue();
     }
 
-    public Service getServiceById(Long Id){
+    public Services getServiceById(Long Id){
         return serviceRepository.findById(Id).orElseThrow(() -> new RuntimeException("Service with Id: "+Id +" not found!"));
     }
 
     @Transactional
-    public Service updateService(Long Id, String name, String description, Integer estimatedDuration, Boolean isActive){
+    public Services updateService(Long Id, String name, String description, Integer estimatedDuration, Boolean isActive){
 
-        Service service = getServiceById(Id);
+        Services service = getServiceById(Id);
 
         if(name != null){
             // check if new name conflicts with newer
@@ -92,7 +96,7 @@ public class AdminService {
 
     @Transactional
     public void deleteService(Long Id){
-        Service service = getServiceById(Id);
+        Services service = getServiceById(Id);
         serviceRepository.delete(service);
     }
 
@@ -116,7 +120,7 @@ public class AdminService {
         staff.setName(name);
         staff.setEmail(email);
         staff.setPhone(phone);
-        staff.setPassword(password);
+        staff.setPassword(passwordEncoder.encode(password));
         staff.setEmployeeId(employeeId);
         staff.setDepartment(department);
         staff.setCounterNumber(counterNumber);
@@ -161,7 +165,7 @@ public class AdminService {
         }
         
         if (password != null) {
-            staff.setPassword(password);
+            staff.setPassword(passwordEncoder.encode(password));
         }
         
         if (department != null) {
@@ -199,8 +203,8 @@ public class AdminService {
         response.setServedToday(serviceHistoryRepository.countServedToday(todayStart));
 
         // Service Distribution
-        List<Service> services = serviceRepository.findAll();
-        for(Service service : services){
+        List<Services> services = serviceRepository.findAll();
+        for(Services service : services){
             List<ServiceHistory> histories = serviceHistoryRepository.findByServiceId(service.getId());
             Long count = histories.stream().filter(h-> "completed".equals(h.getStatus())).count();
             if(count > 0){

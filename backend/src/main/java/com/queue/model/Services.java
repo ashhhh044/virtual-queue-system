@@ -7,7 +7,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "services")
 
-public class Service {
+public class Services {
     
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,12 +27,12 @@ public class Service {
     @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
-    public Service(){
+    public Services(){
         this.createdAt = LocalDateTime.now();
         this.isActive = true;
     }
 
-    public Service(String name, String description, Integer estimatedDuration){
+    public Services(String name, String description, Integer estimatedDuration){
         this.name = name;
         this.description = description;
         this.estimatedDuration = estimatedDuration;

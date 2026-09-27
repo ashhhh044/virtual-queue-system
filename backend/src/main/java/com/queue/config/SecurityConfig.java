@@ -7,6 +7,8 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
@@ -17,6 +19,7 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 @EnableWebSecurity
 public class SecurityConfig {
     private final JwtAuthenticationFilter jwtAuthenticationFilter;
+    private final RateLimitFilter rateLimitFilter = new RateLimitFilter();
 
     public SecurityConfig(JwtAuthenticationFilter jwtAuthenticationFilter){
         this.jwtAuthenticationFilter = jwtAuthenticationFilter;
@@ -30,9 +33,14 @@ public class SecurityConfig {
         .authorizeHttpRequests(authz -> authz
             // Public Endpoints
             .requestMatchers("/api/auth/login").permitAll()
+            .requestMatchers("/api/auth/refresh").permitAll()
+            .requestMatchers("/api/auth/logout").permitAll()
             .requestMatchers("/api/customer/join").permitAll()
+            .requestMatchers("/api/customer/services/**").permitAll()
             .requestMatchers("/api/customer/status/**").permitAll()
+            .requestMatchers("/api/customer/cancel/**").permitAll()
             .requestMatchers("/api/test/**").permitAll()
+            .requestMatchers("/error").permitAll()
             .requestMatchers("/", "/index.html", "/**/*.html", "/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
 
             // Websocket endpoints
@@ -54,9 +62,16 @@ public class SecurityConfig {
             .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         )
 
+        .addFilterBefore(rateLimitFilter, UsernamePasswordAuthenticationFilter.class)
+
         .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
+    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder(){
+        return new BCryptPasswordEncoder();
     }
 
     @Bean

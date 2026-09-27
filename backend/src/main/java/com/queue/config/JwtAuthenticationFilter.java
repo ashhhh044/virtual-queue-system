@@ -1,7 +1,11 @@
 package com.queue.config;
 
 import java.io.IOException;
+import java.util.List;
 
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -25,8 +29,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
         String path = request.getRequestURI();
 
         if (path.startsWith("/api/auth/login") || 
+            path.startsWith("/api/auth/refresh") ||
+            path.startsWith("/api/auth/logout") ||
             path.startsWith("/api/customer/join") ||
+            path.startsWith("/api/customer/services") ||
             path.startsWith("/api/customer/status") ||
+            path.startsWith("/api/customer/cancel") ||
             path.startsWith("/api/test/") ||
             path.startsWith("/ws") ||
             path.startsWith("/topic") ||
@@ -52,6 +60,14 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     request.setAttribute("email", email);
                     request.setAttribute("role", role);
 
+                    // Prefixing roles with "ROLE_"
+                    UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(
+                        email,
+                        null,
+                        List.of(new SimpleGrantedAuthority("ROLE_" + role))
+                    );
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+
                     // Allow access
                     filterChain.doFilter(request, response);
 
@@ -59,7 +75,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter{
                     return;
                 }
             } catch (Exception e) {
-                // TODO: handle exception
             }
 
         }

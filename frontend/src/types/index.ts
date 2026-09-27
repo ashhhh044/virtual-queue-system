@@ -1,25 +1,24 @@
+export type Priority = "normal" | "high" | "emergency";
+export type CustomerStatus = "waiting" | "called" | "served" | "no-show";
+export type Role = "ADMIN" | "STAFF";
+
 export interface Customer {
   id: number;
   name: string;
   email: string;
   phone: string;
-  role: string;
-  createdAt: string;
-  token: string;
+  tokenNumber: string;
   accessKey: string;
-  priority: "emergency" | "high" | "normal";
-  isElderly: boolean;
-  isEmergency: boolean;
-  hasDisability: boolean;
+  priority: Priority;
   position: number | null;
   eta: number | null;
-  status: "waiting" | "called" | "served" | "no-show";
+  status: CustomerStatus;
   joinedAt: string;
   calledAt: string | null;
   servedAt: string | null;
 }
 
-export interface Service {
+export interface ServiceItem {
   id: number;
   name: string;
   description: string;
@@ -31,35 +30,41 @@ export interface Service {
 export interface Staff {
   id: number;
   name: string;
-  role: string;
-  phone: string;
   email: string;
+  phone: string;
   employeeId: string;
   department: string;
   counterNumber: number;
-  createdAt: string;
 }
 
 export interface Analytics {
-  totalCustomer: number;
-  waitingCustomer: number;
+  totalCustomers: number;
+  waitingCustomers: number;
   servedToday: number;
   serviceDistribution: Record<string, number>;
   averageWaitTime: number;
 }
 
-export interface LoginResponse {
-  success: boolean;
-  message: string;
+export interface AuthUser {
   token: string;
-  role: "STAFF" | "ADMIN";
+  refreshToken: string;
+  role: Role;
   name: string;
-  staffId?: number;
-  adminId?: number;
+  id: number;
 }
 
-export interface ApiResponse<T = any> {
-  success: boolean;
-  message?: string;
-  data?: T;
+export interface QueueUpdateMessage {
+  serviceType: string;
+  queueSize: number;
+  customers: Customer[];
+  timestamp: number;
+}
+
+export interface CustomerUpdateMessage {
+  customerId: number;
+  tokenNumber: string;
+  position: number | null;
+  eta: number | null;
+  status: CustomerStatus;
+  timestamp: number;
 }

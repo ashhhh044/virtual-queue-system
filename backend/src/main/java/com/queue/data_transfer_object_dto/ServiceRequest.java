@@ -1,11 +1,19 @@
 package com.queue.data_transfer_object_dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
 
 public class ServiceRequest {
     
+    @NotBlank (message = "Name is required")
     private String name;
+
+    @NotBlank(message = "Description is required")
     private String description;
+
+    @Positive
     private Integer estimatedDuration;
+    
     private Boolean isActive;
 
     // Default Constructor
